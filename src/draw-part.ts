@@ -1,4 +1,6 @@
-import { CharacterDataWrapper, clip, createEmptyDimensions, Dimensions, Expression, GetPreparedPartDataInput, getPreparedPartsData } from "./helper";
+import { CharacterDataWrapper, clip, createEmptyDimensions, Dimensions, Expression, FrameType, GetPreparedPartDataInput, getPreparedPartsData } from "./helper";
+import { SrcMap } from "./helper";
+
 
 export interface PreparedPartData {
   name: string
@@ -6,12 +8,12 @@ export interface PreparedPartData {
   source: [number, number]
   dest: [number, number]
   size: [number, number]
+  img: string
 }
 
 interface FrameConfig {
   debug: boolean
-  faceOnly: boolean
-  expandFrame: boolean
+  frameType: FrameType
 }
 
 export class CanvasWrapper {
@@ -19,21 +21,21 @@ export class CanvasWrapper {
   private context: CanvasRenderingContext2D;
   public pushInBoundaryX = 40;
   public pushInBoundaryY = 5;
-  public transparentValue = 0.3;
+  public transparentValue = 0.2;
 
-  private bound?: {
-    wrapper: MasterWrapper
-    mouseenterListener: () => void
-    mouseleaveListener: () => void
-  }
+  private initialWidth: number;
+  private initialHeight: number;
 
   private lastConfig?: FrameConfig;
 
   constructor(
-    private image: HTMLImageElement,
+    private imgMap: SrcMap,
     width: number,
     height: number
   ) {
+    this.initialWidth = width;
+    this.initialHeight = height;
+
     this.canvas.width = width;
     this.canvas.height = height;
 
@@ -67,11 +69,16 @@ export class CanvasWrapper {
     config: FrameConfig,
     calibrate?: true
   ): Dimensions {
-    if (!calibrate && this.getIfSameFrameAndSetLastFrame(config)) {
-      return createEmptyDimensions();
-    }
+    // if (!calibrate && this.getIfSameFrameAndSetLastFrame(config)) {
+    //   return createEmptyDimensions(); // TODO fix this lmao
+    // }
 
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.clearRect(
+      -this.context.getTransform().m41,
+      -this.context.getTransform().m42,
+      this.canvas.width,
+      this.canvas.height
+    );
 
     const maybeCompleteInputs = bodyPartsList.map((name, type) => (
       {
@@ -88,12 +95,14 @@ export class CanvasWrapper {
     // TypeScript can't understand the type guard above, so we need to tell it
     const completeInputs = maybeCompleteInputs as GetPreparedPartDataInput[];
 
+    const isFaceOnly = config.frameType === "face-only";
+
     let {
       statelessPartsData: stateless,
       span
-    } = getPreparedPartsData(completeInputs, config.faceOnly);
+    } = getPreparedPartsData(completeInputs, isFaceOnly);
 
-    if (config.faceOnly) {
+    if (isFaceOnly) {
       const last = stateless[stateless.length - 1];
       stateless = [last]; // last only (face)
     }
@@ -106,9 +115,15 @@ export class CanvasWrapper {
     };
 
     if (calibrate) {
-      this.canvas.width = result.maxX - result.minX;
-      this.canvas.height = result.maxY - result.minY;
-      this.context.translate(-result.minX, -result.minY);
+      if (config.frameType === "default") {
+        this.canvas.width = this.initialWidth;
+        this.canvas.height = this.initialHeight;
+        this.context.translate(0, 0);
+      } else {
+        this.canvas.width = result.maxX - result.minX;
+        this.canvas.height = result.maxY - result.minY;
+        this.context.translate(-result.minX, -result.minY);
+      }
     }
 
     stateless.forEach((prepared) => {
@@ -121,7 +136,6 @@ export class CanvasWrapper {
       }
     });
 
-
     return result;
   }
 
@@ -132,9 +146,15 @@ export class CanvasWrapper {
     if (transparent) {
       this.context.globalAlpha = this.transparentValue;
     }
+
+    const srcObject = this.imgMap.find(i => i.name === data.img);
+
+    if (!srcObject) {
+      throw new Error(`couldn't find img ${data.img} in imgMap`);
+    }
   
     this.context.drawImage(
-      this.image,
+      srcObject.src,
       data.source[0],
       data.source[1],
       data.size[0],
@@ -152,85 +172,45 @@ export class CanvasWrapper {
 
   private drawDebugPart(data: PreparedPartData) {
     this.context.strokeStyle = "grey";
-  
+
     this.context.strokeRect(
       data.dest[0],
       data.dest[1],
       data.size[0],
       data.size[1]
     )
-  
+
     this.context.textAlign = "center";
     this.context.textBaseline = "middle";
   
     const centerX = (data.size[0] / 2) + data.dest[0];
-    const centerY = (data.dest[1] / 2) + data.dest[1];
-  
-    const canvasWidth = this.context.canvas.width;
-    const canvasHeight = this.context.canvas.height;
-  
+    const centerY = (data.size[1] / 2) + data.dest[1];
+
+    const x1 = data.dest[0];
+    const x2 = data.dest[0] + data.size[0];
+
     const inboundX = clip(
       centerX,
-      this.pushInBoundaryX,
-      canvasWidth - this.pushInBoundaryX
+      x1 + this.pushInBoundaryX,
+      x2 - this.pushInBoundaryX
     );
-  
+
+    const y1 = data.dest[1];
+    const y2 = data.dest[1] + data.size[1];
+    
     const inboundY = clip(
       centerY,
-      this.pushInBoundaryY,
-      canvasHeight - this.pushInBoundaryY
+      y1 + this.pushInBoundaryY,
+      y2 - this.pushInBoundaryY
     );
-  
+
     this.context.fillStyle = "black";
   
     this.context.fillText(
       `${data.type}:${data.name}`,
       inboundX,
-      inboundY
+      inboundY,
     );
-  }
-
-  public bindMasterWrapper(wrapper: MasterWrapper) {
-    if (this.bound?.wrapper) {
-      this.bound.wrapper.stopLoop();
-    }
-
-    this.bound = {
-      wrapper,
-      mouseenterListener: () => wrapper.playLoop(),
-      mouseleaveListener: () => wrapper.stopLoop()
-    };
-
-    this.canvas.addEventListener(
-      "mouseenter",
-      this.bound.mouseenterListener
-    );
-
-    this.canvas.addEventListener(
-      "mouseleave",
-      this.bound.mouseleaveListener
-    )
-  }
-
-  public unbindMasterWrapper() {
-    if (!this.bound) {
-      console.warn("called stopControl before startControl");
-      return;
-    }
-
-    this.canvas.removeEventListener(
-      "mouseenter",
-      this.bound.mouseenterListener,
-    );
-
-    this.canvas.removeEventListener(
-      "mouseleave",
-      this.bound.mouseleaveListener
-    );
-
-    this.bound.wrapper.stopLoop();
-
-    this.bound = undefined;
   }
 }
 
@@ -262,7 +242,7 @@ class TimeoutWrapper {
   }
 }
 
-export class MasterWrapper {
+export class AnimationWrapper {
   private expression: Expression;
   private animationIntervalWrapper = new TimeoutWrapper();
   private loopWrapper = new TimeoutWrapper();
@@ -294,7 +274,7 @@ export class MasterWrapper {
     this.refreshFirstIfStill();
   }
 
-  private getFrameDuration(): number {
+  private getFrameDurationMS(): number {
     const seconds = this.expression.time;
 
     if (seconds === undefined) {
@@ -304,16 +284,17 @@ export class MasterWrapper {
     return seconds * 1000;
   }
 
-  private getLoopDuration(): number {
-    const milliSeconds = this.getFrameDuration();
+  private getLoopDurationMS(): number {
+    const frameDuration = this.getFrameDurationMS();
 
     const frames = this.expression.anim;
 
     if (!frames) {
-      throw new Error("requested loop dureation, but no frames (anim)");
+      throw new Error("requested loop duration, but no frames (anim)");
     }
     
-    return milliSeconds * frames.length;
+    const result = frameDuration * frames.length;
+    return result;
   }
 
   private *nextBodyPartListGenerator() {
@@ -355,7 +336,7 @@ export class MasterWrapper {
 
     this.loopWrapper.set(setInterval(() => {
       this.playOnce();
-    }, this.getLoopDuration()));
+    }, this.getLoopDurationMS()));
   }
 
   playOnce() {
@@ -383,10 +364,11 @@ export class MasterWrapper {
         this.characterDataWrapper,
         this.config
       );
-    }, this.getFrameDuration()));
+    }, this.getFrameDurationMS()));
   }
 
   stopLoop() {
     this.loopWrapper.clear();
+    console.log("tryna stop");
   }
 }

@@ -12,7 +12,6 @@
       "es2020"
     ],
     "rootDir": "src",
-    "moduleResolution": "node",
-    "resolveJsonModule": true
+    "moduleResolution": "node"
   }
 }

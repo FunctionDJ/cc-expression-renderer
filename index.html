@@ -10,11 +10,28 @@
 </head>
 
 <body>
-  <input type="checkbox" id="debug"/> Debug
-  <input type="checkbox" id="loop"/> Loop
-  <input type="checkbox" id="face-only"/> Face only
-  <input type="checkbox" id="expand-frame"/> Expand frame
-  <span id="pos"></span>
+  <div>
+    Frame:
+    <label>
+      <input type="radio" name="frame" class="frame-type" value="default" checked/> Default
+    </label>
+    <label>
+      <input type="radio" name="frame" class="frame-type" value="face-only"/> Face only
+    </label>
+    <label>
+      <input type="radio" name="frame" class="frame-type" value="expand"/> Expand (show everything)
+    </label>
+  </div>
+  <br/>
+  <div>
+    <label>
+      <input type="checkbox" id="debug"/> Debug
+    </label>
+    <label>
+      <input type="checkbox" id="loop"/> Loop
+    </label>
+    | Position: <span id="pos"></span>
+  </div>
   <div id="app"></div>
 
 	<script src="src/index.ts">

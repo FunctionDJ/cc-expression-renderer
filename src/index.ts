@@ -1,6 +1,7 @@
 import characterData from "./manlea.json";
-import { MasterWrapper, CanvasWrapper } from "./draw-part";
-import { CharacterDataWrapper, loadImage } from "./helper";
+import { AnimationWrapper, CanvasWrapper } from "./draw-part";
+import { CharacterDataWrapper, FrameType } from "./helper";
+import { ListenerWrapper } from "./listener-wrapper";
 
 console.clear();
 
@@ -8,19 +9,19 @@ const app = document.getElementById("app")!;
 
 const debugInput = document.querySelector<HTMLInputElement>("#debug")!;
 const loopInput = document.querySelector<HTMLInputElement>("#loop")!;
-const faceOnlyInput = document.querySelector<HTMLInputElement>("#face-only")!;
-const expandFrameInput = document.querySelector<HTMLInputElement>("#expand-frame")!;
 const posOutput = document.getElementById("pos")!;
 
+const frameTypeInputs = Array.from(
+  document.querySelectorAll<HTMLInputElement>(".frame-type")!
+);
+
 async function main() {
-  const characterDataWrapper = new CharacterDataWrapper(characterData as CharacterData);
+  const characterDataWrapper = new CharacterDataWrapper(characterData);
 
-  const img = await loadImage(`./${characterDataWrapper.getSrc()}`);
-
-  console.log("hi");
+  const srcMap = await characterDataWrapper.loadSrcMap();
 
   const canvasWrapper = new CanvasWrapper(
-    img,
+    srcMap,
     characterData.face.width,
     characterData.face.height
   );
@@ -38,49 +39,54 @@ async function main() {
 
   app.appendChild(canvasWrapper.canvas);
 
-  const expression = characterDataWrapper.getExpression("NOD");
+  const expression = characterDataWrapper.getExpression("PANIC");
 
   if (!expression) {
     throw new Error("expression not found");
   }
 
-  const masterWrapper = new MasterWrapper(
+  const frameType = frameTypeInputs.find(i => i.checked)!.value as FrameType
+
+  const animationWrapper = new AnimationWrapper(
     canvasWrapper,
     characterDataWrapper,
     expression,
     {
       debug: debugInput.checked,
-      expandFrame: expandFrameInput.checked,
-      faceOnly: faceOnlyInput.checked
+      frameType
     }
   );
 
   function updateConfig() {
-    masterWrapper.updateConfig({
+    animationWrapper.updateConfig({
       debug: debugInput.checked,
-      expandFrame: expandFrameInput.checked,
-      faceOnly: faceOnlyInput.checked
+      frameType: frameTypeInputs.find(i => i.checked)!.value as FrameType
     })
   }
-
-  masterWrapper.playLoop();
 
   debugInput.addEventListener("change", () => {
     updateConfig();
     canvasWrapper.canvas.style.border = debugInput.checked ? "2px dashed green" : "";
   });
 
+  const listenerWrapper = new ListenerWrapper(
+    canvasWrapper.canvas,
+    animationWrapper
+  );
+
+  listenerWrapper.bind();
+
   loopInput.addEventListener("change", () => {
     if (loopInput.checked) {
-      canvasWrapper.bindMasterWrapper(masterWrapper);
+      listenerWrapper.unbind();
+      animationWrapper.playLoop();
     } else {
-      canvasWrapper.unbindMasterWrapper();
+      animationWrapper.stopLoop();
+      listenerWrapper.bind();
     }
-  })
+  });
 
-  faceOnlyInput.addEventListener("change", updateConfig);
-  expandFrameInput.addEventListener("change", updateConfig);
+  frameTypeInputs.forEach(i => i.addEventListener("change", updateConfig));
 }
 
-debugger;
 main();

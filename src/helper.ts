@@ -7,6 +7,8 @@ export interface Expression {
   faces: string[][]
 }
 
+export type FrameType = "default" | "face-only" | "expand";
+
 export interface PartType {
   [key: string]: RawPartData
 }
@@ -29,8 +31,9 @@ export interface CharacterData {
 }
 
 export const clip = (a: number, min: number, max: number) => {
+
   if (min > max) {
-    return (min + max) / 2;
+    return max / 2;
   }
 
   return (
@@ -129,7 +132,8 @@ export const getPreparedPartsData = (
       type,
       source: [data.srcX, data.srcY],
       size: [data.width, data.height],
-      dest: [actualDestX, actualDestY]
+      dest: [actualDestX, actualDestY],
+      img: data.img || ""
     });
   }
   
@@ -139,11 +143,30 @@ export const getPreparedPartsData = (
   };
 }
 
+export type SrcMap = {
+  name: string
+  src: HTMLImageElement
+}[];
+
 export class CharacterDataWrapper {
   constructor(private characterData: CharacterData) {}
 
-  getSrc() {
-    return this.characterData.face.src;
+  async loadSrcMap(): Promise<SrcMap> {
+    const defaultPair: [string, string] = ["", this.characterData.face.src];
+
+    const subImagesPairs: [string, string][] = this.characterData.face.subImages
+      ? Object.entries(this.characterData.face.subImages)
+      : [];
+
+    const inputPairs: [string, string][] = [
+      defaultPair,
+      ...subImagesPairs
+    ];
+
+    return await Promise.all(inputPairs.map(async (pair) => ({
+      name: pair[0],
+      src: await loadImage(`./${pair[1]}`)
+    })));
   }
 
   getExpression(expression: string): Expression|null {
