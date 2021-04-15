@@ -1,0 +1,25 @@
+{
+  "space": true,
+  "plugins": [
+    "tsdoc"
+  ],
+  "extends": [
+    "xo-react"
+  ],
+  "rules": {
+    "unicorn/no-array-reduce": "off",
+    "quotes": ["error", "double"],
+    "react/react-in-jsx-scope": "off",
+    "object-curly-spacing": ["error", "always"]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "@typescript-eslint/quotes": ["error", "double"],
+        "@typescript-eslint/object-curly-spacing": ["error", "always"],
+        "tsdoc/syntax": "error"
+      }
+    }
+  ]
+}

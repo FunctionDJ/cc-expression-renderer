@@ -1,4 +1,5 @@
 /node_modules
-/.cache
-/dist
-/gamefiles
+/docs
+
+/public/gamefiles/**
+!/public/gamefiles/.gitkeep

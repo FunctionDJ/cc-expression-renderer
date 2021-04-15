@@ -1,41 +1,11 @@
 <html>
-
-<head>
-  <meta charset="UTF-8" />
-  <style>
-    * {
-      box-sizing: border-box
-    }
-  </style>
-</head>
-
-<body>
-  <div>
-    Frame:
-    <label>
-      <input type="radio" name="frame" class="frame-type" value="default" checked/> Default
-    </label>
-    <label>
-      <input type="radio" name="frame" class="frame-type" value="face-only"/> Face only
-    </label>
-    <label>
-      <input type="radio" name="frame" class="frame-type" value="expand"/> Expand (show everything)
-    </label>
-  </div>
-  <br/>
-  <div>
-    <label>
-      <input type="checkbox" id="debug"/> Debug
-    </label>
-    <label>
-      <input type="checkbox" id="loop"/> Loop
-    </label>
-    | Position: <span id="pos"></span>
-  </div>
-  <div id="app"></div>
-
-	<script src="src/index.ts">
-	</script>
-</body>
-
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="shortcut icon" type="image/jpg" href="/icon.webp"/>
+  </head>
+  <body>
+    <!-- | Position: <span id="pos"></span> -->
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
 </html>
