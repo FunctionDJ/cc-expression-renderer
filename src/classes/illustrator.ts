@@ -54,8 +54,6 @@ export class Illustrator {
       this.character.canvas.height
     );
 
-    console.log("paint");
-
     const inputs = this.getPreparedPartDataInputs(bodyPartsList);
 
     const isFaceOnly = config.frameType === "face-only";

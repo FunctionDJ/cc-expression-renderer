@@ -1,4 +1,5 @@
-import {Dimensions} from "./types/expression-renderer";
+import { loadCharacter } from "./classes/repo-helpers";
+import { Dimensions, GamefilesLoader } from "./types/expression-renderer";
 
 export const clip = (a: number, min: number, max: number) => {
   if (min > max) {
@@ -20,11 +21,11 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     img.addEventListener("load", () => {
       resolve(img);
-    }, {once: true});
+    }, { once: true });
 
     img.addEventListener("error", () => {
       reject(new Error(`could not load image ${src}`));
-    }, {once: true});
+    }, { once: true });
   });
 }
 
@@ -38,3 +39,7 @@ export const createEmptyDimensions = (): Dimensions => ({
 export const fetchJson = async (url: string) => (
   fetch(url).then(async r => r.json())
 );
+
+export function browserHasFSASupport() {
+  return "showDirectoryPicker" in window;
+}

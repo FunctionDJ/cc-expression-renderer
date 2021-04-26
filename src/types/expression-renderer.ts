@@ -1,4 +1,9 @@
-import {Part} from './crosscode';
+import { Part } from "./crosscode";
+
+export interface GamefilesLoader {
+  getJson(filePath: string): Promise<any>;
+  getImage(filePath: string): Promise<HTMLImageElement>;
+}
 
 export interface PreparedDataInput {
   name: string;
@@ -22,7 +27,7 @@ export interface StatelessPart {
   img: string;
 }
 
-export type FrameType = 'default' | 'face-only' | 'expand';
+export type FrameType = "default" | "face-only" | "expand";
 
 export type ImageMap = Array<{
   name: string;

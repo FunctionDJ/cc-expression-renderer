@@ -1,5 +1,5 @@
-import {useEffect, useState} from "react";
-import {fetchJson} from "../helper";
+import { useEffect, useState } from "react";
+import { fetchJson } from "../helper";
 
 export const useCharactersList = (): string[] => {
   const [charactersList, setCharactersList] = useState<string[]>([]);

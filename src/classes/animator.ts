@@ -1,4 +1,6 @@
+import { Dispatch } from "react";
 import { AnimatedExpression } from "../types/crosscode";
+import { AnimationState } from "../use-expression-renderer";
 import { Illustrator, FrameConfig } from "./illustrator";
 import { TimeoutWrapper } from "./timeout-wrapper";
 
@@ -9,10 +11,13 @@ export class Animator {
   constructor(
     private readonly illustrator: Illustrator,
     private readonly expression: AnimatedExpression,
-    private config: FrameConfig
+    private config: FrameConfig,
+    private readonly setAnimationState: Dispatch<React.SetStateAction<AnimationState | undefined>>
   ) {
     this.renderFirstFrame(true);
     this.renderFirstFrame();
+
+    this.setAnimationState({ anim: this.expression.anim, position: 0 });
   }
 
   public updateConfig(config: FrameConfig) {
@@ -42,11 +47,11 @@ export class Animator {
       return;
     }
 
-    console.log("play once");
-
     const getNextBodyPartListIndex = this.nextBodyPartListGenerator();
 
     const intervalFunction: TimerHandler = () => {
+      this.setAnimationState(prev => ({ anim: prev?.anim ?? [], position: 1 }));
+
       const iteratorResult = getNextBodyPartListIndex.next();
 
       if (iteratorResult.done) {

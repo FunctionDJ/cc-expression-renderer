@@ -2,16 +2,18 @@ import { Individual } from "./individual";
 import { AbstractFaces } from "../loader-hooks/use-abstract-faces";
 import { loadCharacter, loadCharacterImage } from "./repo-helpers";
 import { Character, Face } from "../types/crosscode";
-import { ImageMap } from "../types/expression-renderer";
-import { Config } from "../components/configuration";
+import { GamefilesLoader, ImageMap } from "../types/expression-renderer";
 import { FrameConfig } from "./illustrator";
+import { Dispatch } from "react";
+
+import { AnimationState } from "../use-expression-renderer";
 
 export class FileRepository {
   private readonly allImages = new Map<string, HTMLImageElement>();
   private readonly json = new Map<string, Character>();
 
   constructor(
-    private readonly gamefilesPath: string,
+    private readonly loader: GamefilesLoader,
     private readonly abstractFaces?: AbstractFaces
   ) {}
 
@@ -33,7 +35,9 @@ export class FileRepository {
     id: string,
     expression: string,
     canvas: HTMLCanvasElement,
-    frameConfig: FrameConfig
+    frameConfig: FrameConfig,
+    setIsAnimation: Dispatch<boolean>,
+    setAnimationState: Dispatch<React.SetStateAction<AnimationState | undefined>>
   ): Promise<Individual|null> {
     let data = this.json.get(id);
 
@@ -44,7 +48,7 @@ export class FileRepository {
     }
 
     if (!data) {
-      data = await loadCharacter(category, characterName, this.gamefilesPath);
+      data = await loadCharacter(this.loader, category, characterName);
       this.json.set(id, data);
     }
 
@@ -69,7 +73,9 @@ export class FileRepository {
       canvas,
       expression,
       characterImages,
-      frameConfig
+      frameConfig,
+      setIsAnimation,
+      setAnimationState
     );
   }
 
@@ -98,7 +104,7 @@ export class FileRepository {
     let image = this.allImages.get(src);
 
     if (!image) {
-      image = await loadCharacterImage(characterName, src, this.gamefilesPath);
+      image = await loadCharacterImage(this.loader, characterName, src);
       this.allImages.set(src, image);
     }
 

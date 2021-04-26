@@ -93,15 +93,14 @@ export interface AnimatedExpression {
  */
 export type Expression = StaticExpression | AnimatedExpression;
 
-type Mapped<T> = Record<string, T>;
-export type FaceMap = Mapped<string>; // Unexpected, CC do be like that
+export type FaceMap = Record<string, string>; // Unexpected, CC do be like that
 
-export type SubImageMap = Mapped<string>;
+export type SubImageMap = Record<string, string>;
 
-export type ExpressionMap = Mapped<Expression>;
+export type ExpressionMap = Record<string, Expression>;
 
 /** See {@link Face.parts} for details */
-export type PartMap = Mapped<Part>;
+export type PartMap = Record<string, Part>;
 
 export interface Face {
   /** Reference width. Some expressions like Apollo pointing and all of Manlea are larger than this field. */

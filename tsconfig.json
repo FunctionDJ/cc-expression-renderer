@@ -4,6 +4,7 @@
     "noUncheckedIndexedAccess": true,
     "target": "ESNext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "types": ["vite/client", "@types/wicg-file-system-access"],
     "allowJs": false,
     "skipLibCheck": false,
     "esModuleInterop": false,

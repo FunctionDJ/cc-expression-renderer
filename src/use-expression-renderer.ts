@@ -1,26 +1,36 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Individual } from "./classes/individual";
+import { Dispatch, useEffect, useMemo, useRef, useState } from "react";
 import { FileRepository } from "./classes/file-repository";
-import { FrameConfig } from "./classes/illustrator";
 import { useAbstractFaces } from "./loader-hooks/use-abstract-faces";
+import { Config } from "./components/configuration";
+import { GamefilesLoader } from "./types/expression-renderer";
+
+export interface AnimationState {
+  anim: number[];
+  position: number;
+}
+
+interface ReturnType {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  animationState: AnimationState|undefined;
+}
 
 export const useExpressionRenderer = (
+  loader: GamefilesLoader,
   characterName: string|undefined,
   expression: string|undefined|false,
-  frameConfig: FrameConfig
-): React.RefObject<HTMLCanvasElement> => {
+  config: Config,
+  setIsAnimation: Dispatch<boolean>,
+  setError: Dispatch<Error|undefined>
+): ReturnType => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  console.log("using");
+
+  // const [animationState, setAnimationState] = useState<AnimationState>();
 
   const abstractFaces = useAbstractFaces();
 
-  const repo = useMemo(() => new FileRepository("/gamefiles", abstractFaces), [abstractFaces]);
-
-  const [characterState, setCharacterState] = useState<Individual>();
-
-  useEffect(() => {
-    characterState?.clean();
-    characterState?.render();
-  }, [characterName, expression, characterState]);
+  const repo = useMemo(() => new FileRepository(loader, abstractFaces), [abstractFaces, loader]);
 
   useEffect(() => {
     async function main() {
@@ -36,40 +46,31 @@ export const useExpressionRenderer = (
         characterName,
         expression || "DEFAULT",
         canvasRef.current,
-        frameConfig
+        config,
+        setIsAnimation,
+        () => ({})
       );
 
       if (!individual) {
         return;
       }
 
-      setCharacterState(individual);
-
       individual.render();
 
-      // Const canvasWrapper = new Illustrator(
-      //   imgMap,
-      //   characterData.face.width,
-      //   characterData.face.height,
-      //   canvasRef.current
-      // );
-
-      // const expression = characterWrapper.getExpression("NOD");
-
-      // if (!expression) {
-      //   throw new Error("expression not found");
-      // }
-
-      // const animationWrapper = new Animator(canvasWrapper, characterWrapper, expression, {
-      //   debug: false,
-      //   frameType: "expand"
-      // });
-
-      // animationWrapper.playOnce();
+      return individual;
     }
 
-    main().catch(() => null);
-  }, [canvasRef, characterName, expression, abstractFaces, repo]);
+    const indiPromise = main();
 
-  return canvasRef;
+    return () => {
+      indiPromise
+        .then(indi => indi?.clean())
+        .catch(setError);
+    };
+  }, [canvasRef, characterName, expression, abstractFaces, repo, config, setError, setIsAnimation]);
+
+  return {
+    canvasRef,
+    animationState: undefined
+  };
 };

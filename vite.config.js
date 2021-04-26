@@ -6,5 +6,8 @@ export default defineConfig({
   plugins: [reactRefresh()],
   esbuild: {
     jsxInject: "import React from \"react\";"
+  },
+  build: {
+    target: "es2020"
   }
 });

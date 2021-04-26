@@ -1,5 +1,7 @@
+import { Dispatch } from "react";
 import { AnimatedExpression, Expression, Face, Part, StaticExpression } from "../types/crosscode";
 import { ImageMap } from "../types/expression-renderer";
+import { AnimationState } from "../use-expression-renderer";
 import { Animator } from "./animator";
 import { FrameConfig, Illustrator } from "./illustrator";
 import { MouseBinder } from "./mouse-binder";
@@ -14,7 +16,9 @@ export class Individual {
     public readonly canvas: HTMLCanvasElement,
     private expressionName: string,
     public readonly images: Readonly<ImageMap>,
-    private frameConfig: FrameConfig
+    private frameConfig: FrameConfig,
+    private readonly setIsAnimation: Dispatch<boolean>,
+    private readonly setAnimationState: Dispatch<React.SetStateAction<AnimationState | undefined>>
   ) {
     this.expression = this.getExpression();
   }
@@ -38,6 +42,9 @@ export class Individual {
     }
 
     const illustrator = new Illustrator(this);
+
+    const isAnimation = "anim" in this.expression;
+    this.setIsAnimation(isAnimation);
 
     if ("anim" in this.expression) {
       this.renderAnimation(illustrator, this.expression);
@@ -84,7 +91,8 @@ export class Individual {
     this.animator = new Animator(
       illustrator,
       animExpression,
-      this.frameConfig
+      this.frameConfig,
+      this.setAnimationState
     );
 
     this.animator.playOnce();

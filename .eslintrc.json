@@ -1,16 +1,21 @@
 {
-  "space": true,
-  "plugins": [
-    "tsdoc"
-  ],
+  "plugins": ["tsdoc"],
   "extends": [
-    "xo-react"
+    "xo",
+    "xo-react",
+    "xo-typescript"
   ],
+  "parserOptions": {
+    "extraFileExtensions": "mjs"
+  },
   "rules": {
     "unicorn/no-array-reduce": "off",
     "quotes": ["error", "double"],
     "react/react-in-jsx-scope": "off",
-    "object-curly-spacing": ["error", "always"]
+    "react/jsx-indent": ["error", 2],
+    "react/jsx-indent-props": ["error", 2],
+    "object-curly-spacing": ["error", "always"],
+    "indent": ["error", 2]
   },
   "overrides": [
     {
@@ -18,6 +23,7 @@
       "rules": {
         "@typescript-eslint/quotes": ["error", "double"],
         "@typescript-eslint/object-curly-spacing": ["error", "always"],
+        "@typescript-eslint/indent": ["error", 2],
         "tsdoc/syntax": "error"
       }
     }
